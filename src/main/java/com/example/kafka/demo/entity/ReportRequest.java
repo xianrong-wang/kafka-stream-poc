@@ -7,17 +7,19 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
 @Builder
-public class ReportRequest
-{
+@Data
+public class ReportRequest{
+    private String name;
     private LocalDate reportDate;
     private String tenant;
-    private String user;
-    private LocalDateTime requestDate;
-    private String iptTransactionId;
+    private String requestUser;
+    private LocalDateTime requestDatetime;
     private boolean overwrite;
+    private String iptTransactionId;
 }

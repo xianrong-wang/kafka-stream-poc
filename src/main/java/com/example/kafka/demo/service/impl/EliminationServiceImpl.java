@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
+import com.example.kafka.demo.entity.IptTransaction;
 import com.example.kafka.demo.entity.LedgePost;
 import com.example.kafka.demo.service.EliminationService;
 
@@ -18,7 +19,7 @@ public class EliminationServiceImpl implements EliminationService
 {
 
     @Override
-    public List<LedgePost> generateElimLedgePost(List<LedgePost> posts)
+    public List<LedgePost> createElimLedgePost(List<LedgePost> posts)
     {
         log.info("generateElimLedgePost for {}", posts);
         List<LedgePost> results = new ArrayList<>();
@@ -52,5 +53,17 @@ public class EliminationServiceImpl implements EliminationService
      */
     private String getElimEntity(String transactionId) {
         return "FX_"+transactionId;
+    }
+    @Override
+    public boolean removeElimLedgePost(String fxEntityId)
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+    @Override
+    public boolean removeElimLedgePost(IptTransaction ipt)
+    {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

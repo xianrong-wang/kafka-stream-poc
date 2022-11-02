@@ -3,8 +3,7 @@ package com.example.kafka.demo.entity;
 import lombok.Data;
 
 @Data
-public class Message
-{
+public class Message<T>{
     private String key;
-    private String value;
+    private T payload;
 }

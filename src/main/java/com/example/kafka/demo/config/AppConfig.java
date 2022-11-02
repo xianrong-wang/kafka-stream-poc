@@ -1,9 +1,10 @@
-package com.example.kafka.demo;
+package com.example.kafka.demo.config;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +13,7 @@ import org.springframework.kafka.config.TopicBuilder;
 import com.example.kafka.demo.entity.ReportStatus;
 import com.example.kafka.demo.json.StatusDeserializer;
 import com.example.kafka.demo.processor.ReportDetailProcessor;
-import com.example.kafka.demo.processor.ReportProcessor;
+import com.example.kafka.demo.processor.MessageProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -39,6 +40,21 @@ public class AppConfig
         return objectMapper;
     }
     
+    @Bean
+    public NewTopic createReportTopic(KafkaConfig config)
+    {
+        return TopicBuilder.name(config.getReportRequest().getTopic()).partitions(3).replicas(2).build();
+    }
+
+    @Bean
+    public NewTopic createReportDetailTopic(KafkaConfig config)
+    {
+        return TopicBuilder.name(config.getReportDetail().getTopic()).partitions(3).replicas(2).build();
+    }
+    
+    /*
+     * @Bean public NewTopic createProcessResultTopic(KafkaConfig config) { return TopicBuilder.name(config.getProcessResult().getTopic()).partitions(1).replicas(2).build(); }
+     */
    
     @Bean
     public Jedis getJedis( 

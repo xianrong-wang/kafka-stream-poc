@@ -1,30 +1,25 @@
 package com.example.kafka.demo.processor;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Predicate;
-
 import org.apache.kafka.streams.processor.api.Processor;
 import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
 
 import com.example.kafka.demo.ReportTaskHandler;
+import com.example.kafka.demo.entity.Message;
 import com.example.kafka.demo.entity.ReportMessage;
 import com.example.kafka.demo.entity.ReportReqResult;
-import com.example.kafka.demo.entity.ReportStatus;
+import com.example.kafka.demo.entity.ReportRequest;
 import com.example.kafka.demo.redisks.RedisStore;
-import com.example.kafka.demo.service.IptService;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ReportProcessor implements Processor<String, ReportMessage, Void, Void> {
+public class MessageProcessor implements Processor<String, Message<?>, Void, Void> {
 
     private ProcessorContext<Void, Void> context;
     private RedisStore<String, ReportReqResult> redisStore;
     private ReportTaskHandler handler;
     final String stateStoreName;
-    public ReportProcessor(ReportTaskHandler handler,String stateStoreName){
+    public MessageProcessor(ReportTaskHandler handler,String stateStoreName){
         this.handler = handler;
         this.stateStoreName = stateStoreName; 
     }
@@ -43,15 +38,15 @@ public class ReportProcessor implements Processor<String, ReportMessage, Void, V
     }
 
     @Override
-    public void process(Record<String, ReportMessage> record)
+    public void process(Record<String, Message<?>> record)
     {
         try
         {
-            ReportReqResult result = handler.process(record.value(),redisStore);
+            ReportReqResult result = null;//handler.process(record.value(),redisStore);
             log.info("complete processing message: {}", record.value());
             log.info("result: {}", result);
             //redisStore.write(record.key(), result);
-        } catch (InterruptedException e)
+        } catch (Exception e)
         {
             //currValue.setStatus(ReportStatus.FAIL);
             //redisStore.write(record.key(), currValue);

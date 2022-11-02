@@ -3,17 +3,14 @@ package com.example.kafka.demo.redisks;
 import org.apache.kafka.streams.processor.StateStore;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.internals.StateStoreProvider;
-import org.springframework.stereotype.Component;
 
 import com.example.kafka.demo.RedisClientImpl;
 
 public class RedisStoreType<K, V> implements QueryableStoreType<ReadableRedisStore<K, V>> {
-    private String streamId;
     private RedisClientImpl<K,V> redisClient;
 
-    public RedisStoreType(String streamId,RedisClientImpl<K,V> redisClient)
+    public RedisStoreType(RedisClientImpl<K,V> redisClient)
     {
-        this.streamId = streamId;
         this.redisClient = redisClient;
     }
 
@@ -25,6 +22,6 @@ public class RedisStoreType<K, V> implements QueryableStoreType<ReadableRedisSto
 
     @Override
     public ReadableRedisStore<K, V> create(final StateStoreProvider storeProvider, final String storeName) {
-        return new RedisStoreTypeWrapper<>(storeProvider, storeName, streamId, this, redisClient);
+        return new RedisStoreTypeWrapper<>(redisClient);
     }
 }

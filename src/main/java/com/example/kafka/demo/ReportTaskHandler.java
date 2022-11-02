@@ -66,7 +66,7 @@ public class ReportTaskHandler
             result = ReportReqResult.builder()
                     .reportRequest(
                             ReportRequest.builder()
-                            .user(null)
+                            //.user(null)
                             .tenant(null)
                             .reportDate(LocalDate.parse(msg.getReportDate(), DateTimeFormatter.ofPattern("yyyyMMdd"))).build())
                     .status(ReportStatus.PROCESSING).startTime(LocalDateTime.now())
@@ -80,7 +80,7 @@ public class ReportTaskHandler
                 final ReportReqResult subResult = ReportReqResult.builder()
                         .reportRequest(
                                 ReportRequest.builder()
-                                .user(null)
+                                //.user(null)
                                 .tenant(null)
                                 .iptTransactionId(x.getTransactionId())
                                 .reportDate(LocalDate.parse(msg.getReportDate(), DateTimeFormatter.ofPattern("yyyyMMdd"))).build())
@@ -88,7 +88,8 @@ public class ReportTaskHandler
                 subResults.add(subResult);
                 trackDetailTasks.add(x.getKey());
                 mapResult.put(x.getKey(), subResult);
-                producer.sendMessage(x);})
+                //producer.sendMessage(x);
+                })
             ;
             redisStore.write(msg.getKey(), result);
         }
@@ -140,19 +141,26 @@ public class ReportTaskHandler
     
     public ReportReqResult processReportDetail(ReportDetailMessage msg,RedisStore<String,ReportReqResult> redisStore) {
         log.info("processing sub message: {}", msg);
+       
         ReportReqResult result = ReportReqResult.builder()
         .reportRequest(
                 ReportRequest.builder()
-                .user(null)
+                //.user(null)
                 .tenant(null)
                 .iptTransactionId(msg.getTransactionId())
                 //.reportDate(LocalDate.parse(msg.getReportDate(), DateTimeFormatter.ofPattern("yyyyMMdd")))
                 .build())
         .status(ReportStatus.PROCESSING)
         .startTime(LocalDateTime.now()).build();
+        if(checkCancel()) {
+            result.setStatus(ReportStatus.CANCEL);
+            result.setEndTime(LocalDateTime.now());
+            redisStore.write(msg.getKey(), result);
+            return result;
+        }
         redisStore.write(msg.getKey(), result);
         
-        List<LedgePost> posts = elimServ.generateElimLedgePost(ledgeServ
+        List<LedgePost> posts = elimServ.createElimLedgePost(ledgeServ
                 .getLedagePost(msg.getTransactionId()));
        //sink into db
         log.info("persist elimination entries: {}", posts);
@@ -162,6 +170,12 @@ public class ReportTaskHandler
         redisStore.write(msg.getKey(), result);
         return result;
     }
+    private boolean checkCancel()
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
     /*
      * build report detail message based on ipt transaction
      */
