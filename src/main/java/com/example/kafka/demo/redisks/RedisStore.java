@@ -4,6 +4,7 @@ import org.apache.kafka.streams.processor.StateStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.example.kafka.demo.RedisClient;
 import com.example.kafka.demo.RedisClientImpl;
 import com.example.kafka.demo.entity.ReportMessage;
 
@@ -14,16 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RedisStore<K, V> implements StateStore, WriteableRedisStore<K, V>, ReadableRedisStore<K, V> {
     private String name;
-    private String streamId;
     private boolean open = true;
     private boolean loggingEnabled = false;
     private boolean flushed;
     
-    private RedisClientImpl<K,V> redisClient;
+    private RedisClient redisClient;
     
-    public RedisStore(String name, String streamId, boolean loggingEnabled,RedisClientImpl<K,V> redisClient) {
+    public RedisStore(String name, boolean loggingEnabled,RedisClient redisClient) {
         this.name = name;
-        this.streamId = streamId;
         this.loggingEnabled = loggingEnabled;
         this.redisClient = redisClient;
     }

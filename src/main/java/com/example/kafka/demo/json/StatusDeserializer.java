@@ -24,7 +24,7 @@ public class StatusDeserializer extends JsonDeserializer<ReportStatus>
         return Stream.of(
                 ReportStatus.values())
                 .filter(s->s.name().equals(node.asText()))
-                .peek(x->log.info("{}",x))
+                //.peek(x->log.info("{}",x))
                 .findFirst()
                 .orElseGet(()->ReportStatus.NONE);
     }

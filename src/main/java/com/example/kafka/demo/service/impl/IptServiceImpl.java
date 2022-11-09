@@ -1,5 +1,6 @@
 package com.example.kafka.demo.service.impl;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +20,7 @@ public class IptServiceImpl implements IptService
 {
 
     @Override
-    public List<IptTransaction> getIptTransactions(String tenant, String reportDate)
+    public List<IptTransaction> getIptTransactions(String tenant, LocalDate reportDate)
     {
         try
         {

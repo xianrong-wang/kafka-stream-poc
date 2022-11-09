@@ -3,9 +3,9 @@ package com.example.kafka.demo.message.handler;
 import com.example.kafka.demo.entity.Message;
 import com.example.kafka.demo.entity.ProcessResult;
 
-public interface MessageProcessor
+public interface TaskHandler
 {
-    ProcessResult process(Message<?> message) throws UnkownMessageException;
+    void run(Message<?> message) throws UnkownMessageException;
 }
 
 

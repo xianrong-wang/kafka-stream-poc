@@ -13,11 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Data
-public class ReportRequest{
-    private String name;
-    private LocalDate reportDate;
-    private String tenant;
-    private String requestUser;
-    private LocalDateTime requestDatetime;
-    private boolean overwrite;
+public class ReportStatusUpdRequest
+{
+    private String origialKey;
+    private String subMessageKey;
+    private ReportStatus subMessageStatus;
 }

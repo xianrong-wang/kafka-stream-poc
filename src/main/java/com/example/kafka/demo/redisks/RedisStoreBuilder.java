@@ -6,22 +6,21 @@ import java.util.Map;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.example.kafka.demo.RedisClient;
 import com.example.kafka.demo.RedisClientImpl;
 
 public class RedisStoreBuilder<K, V> implements StoreBuilder<RedisStore<K, V>> {
 
     private boolean enableCaching = true;
     private final String name;
-    private final String streamId;
 
     private final Map<String, String> logConfig = new HashMap<>();
     private boolean loggingEnabled;
 
-    private RedisClientImpl<K,V> redisClient;
+    private RedisClient redisClient;
     @Autowired
-    public RedisStoreBuilder(String name, String streamId, boolean loggingEnabled,RedisClientImpl<K,V> redisClient) {
+    public RedisStoreBuilder(String name, boolean loggingEnabled,RedisClient redisClient) {
         this.name = name;
-        this.streamId = streamId;
         this.loggingEnabled = loggingEnabled;
         this.redisClient = redisClient;
     }
@@ -52,7 +51,7 @@ public class RedisStoreBuilder<K, V> implements StoreBuilder<RedisStore<K, V>> {
 
     @Override
     public RedisStore<K, V> build() {
-        return new RedisStore<>(this.name, this.streamId, this.loggingEnabled,this.redisClient);
+        return new RedisStore<>(this.name, this.loggingEnabled,this.redisClient);
     }
 
     @Override

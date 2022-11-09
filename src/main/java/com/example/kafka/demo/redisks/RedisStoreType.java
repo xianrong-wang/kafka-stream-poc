@@ -4,12 +4,13 @@ import org.apache.kafka.streams.processor.StateStore;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.internals.StateStoreProvider;
 
+import com.example.kafka.demo.RedisClient;
 import com.example.kafka.demo.RedisClientImpl;
 
 public class RedisStoreType<K, V> implements QueryableStoreType<ReadableRedisStore<K, V>> {
-    private RedisClientImpl<K,V> redisClient;
+    private RedisClient redisClient;
 
-    public RedisStoreType(RedisClientImpl<K,V> redisClient)
+    public RedisStoreType(RedisClient redisClient)
     {
         this.redisClient = redisClient;
     }
@@ -22,6 +23,6 @@ public class RedisStoreType<K, V> implements QueryableStoreType<ReadableRedisSto
 
     @Override
     public ReadableRedisStore<K, V> create(final StateStoreProvider storeProvider, final String storeName) {
-        return new RedisStoreTypeWrapper<>(redisClient);
+        return new RedisStoreTypeWrapper<K, V>(redisClient);
     }
 }

@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 import com.example.kafka.demo.entity.IptTransaction;
 import com.example.kafka.demo.entity.LedgePost;
-import com.example.kafka.demo.entity.ReportDetailMessage;
+import com.example.kafka.demo.entity.IptRequest;
 import com.example.kafka.demo.entity.ReportMessage;
 import com.example.kafka.demo.entity.ReportReqResult;
 import com.example.kafka.demo.entity.ReportRequest;
@@ -31,13 +31,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor
 @Component
-public class ReportTaskHandler
+public class ReportTaskSyncHandler
 {
     final private IptService iptServ;
     final private EliminationService elimServ;
     final private LedgeService ledgeServ;
     final private Producer producer;
-    final private RedisClient<String,ReportReqResult> redisClient;
+    final private RedisClient redisClient;
     
     public ReportReqResult process(ReportMessage msg, RedisStore<String,ReportReqResult> redisStore) throws InterruptedException{
         List<String> trackDetailTasks = new ArrayList<>();
@@ -56,8 +56,8 @@ public class ReportTaskHandler
             exResult
             .getSubReqResult()
             .forEach(x->{
-                trackDetailTasks.add(x.getReportRequest().getIptTransactionId());
-                mapResult.put(x.getReportRequest().getIptTransactionId(), x);
+                //trackDetailTasks.add(x.getReportRequest().getIptTransactionId());
+                //mapResult.put(x.getReportRequest().getIptTransactionId(), x);
             });
             result = exResult;
         }
@@ -73,7 +73,7 @@ public class ReportTaskHandler
                     .subReqResult(subResults)
                     .build();
             
-            iptServ.getIptTransactions(msg.getTenant(), msg.getReportDate())
+            iptServ.getIptTransactions(msg.getTenant(), LocalDate.parse(msg.getReportDate()))
             .parallelStream().peek(x->log.info("ipt: {}", x))
             .map(x->this.buildReportDetailMessage(x,msg))
             .forEach(x->{
@@ -82,7 +82,7 @@ public class ReportTaskHandler
                                 ReportRequest.builder()
                                 //.user(null)
                                 .tenant(null)
-                                .iptTransactionId(x.getTransactionId())
+                                //.iptTransactionId(x.getTransactionId())
                                 .reportDate(LocalDate.parse(msg.getReportDate(), DateTimeFormatter.ofPattern("yyyyMMdd"))).build())
                         .status(ReportStatus.NONE).build();
                 subResults.add(subResult);
@@ -139,7 +139,7 @@ public class ReportTaskHandler
         return result;
     }
     
-    public ReportReqResult processReportDetail(ReportDetailMessage msg,RedisStore<String,ReportReqResult> redisStore) {
+    public ReportReqResult processReportDetail(IptRequest msg,RedisStore<String,ReportReqResult> redisStore) {
         log.info("processing sub message: {}", msg);
        
         ReportReqResult result = ReportReqResult.builder()
@@ -147,7 +147,7 @@ public class ReportTaskHandler
                 ReportRequest.builder()
                 //.user(null)
                 .tenant(null)
-                .iptTransactionId(msg.getTransactionId())
+                //.iptTransactionId(msg.getTransactionId())
                 //.reportDate(LocalDate.parse(msg.getReportDate(), DateTimeFormatter.ofPattern("yyyyMMdd")))
                 .build())
         .status(ReportStatus.PROCESSING)
@@ -179,7 +179,7 @@ public class ReportTaskHandler
     /*
      * build report detail message based on ipt transaction
      */
-    private ReportDetailMessage buildReportDetailMessage(IptTransaction ipt,ReportMessage msg) {
-        return ReportDetailMessage.builder().key(ipt.getEventId()).transactionId(ipt.getEventId()).reportDate(msg.getReportDate()).build();
+    private IptRequest buildReportDetailMessage(IptTransaction ipt,ReportMessage msg) {
+        return IptRequest.builder().key(ipt.getEventId()).transactionId(ipt.getEventId()).reportDate(msg.getReportDate()).build();
     }
 }

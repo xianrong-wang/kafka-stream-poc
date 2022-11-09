@@ -8,7 +8,9 @@ import javax.annotation.PostConstruct;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import com.example.kafka.demo.entity.IptRequest;
 import com.example.kafka.demo.entity.ReportRequest;
+import com.example.kafka.demo.entity.ReportStatusUpdRequest;
 
 import lombok.Data;
 
@@ -18,8 +20,8 @@ import lombok.Data;
 public class KafkaConfig 
 {
     private ReportTopicConfig reportRequest;
-    private ReportTopicConfig reportDetail;
-    private ReportTopicConfig processResult;
+    private ReportTopicConfig elimGenPerIptRequest;
+    private ReportTopicConfig reportStatusUpdRequest;
     
     private Map<Class<?>,String> typeTopicMap;
     
@@ -27,7 +29,7 @@ public class KafkaConfig
    void buildMap(){
        typeTopicMap = new HashMap<>();
        typeTopicMap.put(ReportRequest.class, this.reportRequest.getTopic());
-       //typeTopicMap.put(ReportRequest.class, this.reportRequest.getTopic());
-       //typeTopicMap.put(ReportRequest.class, this.reportRequest.getTopic());
+       typeTopicMap.put(IptRequest.class, this.elimGenPerIptRequest.getTopic());
+       typeTopicMap.put(ReportStatusUpdRequest.class, this.reportStatusUpdRequest.getTopic());
    }
 }

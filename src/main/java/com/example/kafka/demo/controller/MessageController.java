@@ -4,10 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,14 +21,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.kafka.demo.Producer;
+import com.example.kafka.demo.RedisClient;
 import com.example.kafka.demo.RedisClientImpl;
 import com.example.kafka.demo.config.KafkaConfig;
 import com.example.kafka.demo.entity.Message;
 import com.example.kafka.demo.entity.ProcessResult;
 import com.example.kafka.demo.entity.ReportReqResult;
 import com.example.kafka.demo.entity.ReportRequest;
+import com.example.kafka.demo.entity.ReportStatus;
+import com.example.kafka.demo.event.IaEventPublisher;
+import com.example.kafka.demo.message.handler.MessageCancelListener;
 import com.example.kafka.demo.redisks.ReadableRedisStore;
 import com.example.kafka.demo.redisks.RedisStoreType;
+import com.example.kafka.demo.service.KeyManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
@@ -34,14 +44,14 @@ public class MessageController
     @Autowired
     private Producer producer;
     @Autowired
-    private StreamsBuilderFactoryBean factoryBean;
-    @Autowired
-    private RedisClientImpl<String,ProcessResult> redisClient;
-    @Autowired
-    private KafkaConfig config;
+    private RedisClient redisClient;
     
     @Autowired
-    private ObjectMapper om;
+    private IaEventPublisher cancelEventPublisher;
+    
+    
+    @Autowired
+    private KeyManager keyManager;
     
     @PostMapping("/messages/")
     public String create(@RequestBody Message<ReportRequest> m)
@@ -55,7 +65,32 @@ public class MessageController
     public String sendReportRequestMessage(@RequestBody ReportRequest rtpRequest)
     {
         log.info("create message for report request: {}", rtpRequest);
-        producer.sendMessage(buildMessage(rtpRequest));
+        final Message<?> message = buildMessage(rtpRequest);
+        
+        //message in queue
+        final String messageInQueueKey = keyManager.generateQueueKey(rtpRequest.getTenant());
+        ReportRequest inQueueRequest = redisClient.read(messageInQueueKey, ReportRequest.class);
+        if(inQueueRequest!=null) {
+            return "Rejected!";
+        }
+        producer.sendMessage(message);
+        redisClient.write(messageInQueueKey, rtpRequest);
+        return "Success! view message status from: /messages/report/" + message.getKey();
+    }
+    //cancel
+    @PostMapping("/messages/cancel/{key}")
+    public String cancelReportRequestMessage(@PathVariable String key)
+    {
+        ProcessResult exResult = redisClient.read(key, ProcessResult.class);
+        if(exResult!=null && ReportStatus.SUCCESS.compareTo(exResult.getStatus())!=0) {
+            exResult.setStatus(ReportStatus.CANCEL);
+            redisClient.write(key, exResult);
+        }
+        log.info("create message for cancel report request: {}", key);
+        //producer.sendMessage(buildMessage(rtpRequest));
+        //listner.cancel(key);
+        cancelEventPublisher.publishCancelEvent(key);
+        redisClient.write(keyManager.generateQueueKeyByReportKey(key),null);
         return "Success!";
     }
     
@@ -63,32 +98,24 @@ public class MessageController
     {
         rtpRequest.setRequestDatetime(LocalDateTime.now());
         Message<ReportRequest> m = new Message<>();
-        m.setKey(generateMessageKey(rtpRequest));
+        m.setKey(keyManager.generateReportKey(rtpRequest));
         m.setPayload(rtpRequest);
         return m;
     }
 
-    private String generateMessageKey(ReportRequest rtpRequest)
-    {
-        return String.join( ":",rtpRequest.getTenant(), 
-                rtpRequest.getReportDate().format(DateTimeFormatter.ISO_DATE),
-                rtpRequest.getRequestDatetime().format(DateTimeFormatter.ISO_DATE_TIME)
-                );
+    public List<ProcessResult> getAllReportRequestStatus(@PathVariable String tenant) {
+        
+        return redisClient.readKeys(tenant+":*")
+        .stream()
+        .map(x->redisClient.read(x, ProcessResult.class))
+        .collect(Collectors.toList());
     }
-
     
     @GetMapping("/messages/status/{key}")
-    public Object getReportRequestStatus(@PathVariable String key) {
+    public ProcessResult getReportRequestStatus(@PathVariable String key) {
         
+        return redisClient.read(key, ProcessResult.class);
         // Get the Redis store type
-        final QueryableStoreType<ReadableRedisStore<String, ProcessResult>> queryableStoreType =
-                new RedisStoreType<String, ProcessResult>(redisClient);
-        
-        KafkaStreams kafkaStreams =  factoryBean.getKafkaStreams();
-        
-        final String storeName = config.getReportRequest().getStateStore();
-        ReadableRedisStore<String, ProcessResult> store = kafkaStreams
-            .store(StoreQueryParameters.fromNameAndType(storeName, queryableStoreType));
-        return store.read(key,ProcessResult.class);
+        //return getFromStateStore(key);
     }
 }

@@ -1,12 +1,12 @@
 package com.example.kafka.demo.redisks;
 
-import com.example.kafka.demo.RedisClientImpl;
+import com.example.kafka.demo.RedisClient;
 
 public class RedisStoreTypeWrapper<K, V> implements ReadableRedisStore<K, V> {
-    private RedisClientImpl<K,V> redisClient;
+    private RedisClient redisClient;
 
     public RedisStoreTypeWrapper(
-                                 final RedisClientImpl<K,V> redisClient) 
+                                 final RedisClient redisClient) 
     {
         this.redisClient = redisClient;
     }

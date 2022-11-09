@@ -1,5 +1,7 @@
 package com.example.kafka.demo.entity;
 
+import java.time.LocalDateTime;
+
 import com.example.kafka.demo.json.StatusDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -8,15 +10,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * @author xfmh16x
+ * request of generating elimination per IPT transaction
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Builder
-public class ReportDetailMessage
+public class IptRequest
 {
-    private String key;
+    private String key;//to remove
     private String transactionId;
-    @JsonDeserialize(using = StatusDeserializer.class)
     private ReportStatus status;
-    private String reportDate;
+    private String reportDate;//to remove
+    private String origReqKey;
+    private LocalDateTime requestDatetime;
+    private boolean isOverwrite;
 }
