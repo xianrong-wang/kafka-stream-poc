@@ -39,7 +39,7 @@ public class RedisListener
             if(message.toString().startsWith("Queue:")) {
                 final ReportRequest req = client.read(message.toString(),ReportRequest.class);
                 log.info("new value: {}",req);
-                if(req!=null)
+                if(req != null && req.isCancelled())
                     cancelEventPublisher.publishCancelEvent(keyManager.generateReportKey(req));
             }
     

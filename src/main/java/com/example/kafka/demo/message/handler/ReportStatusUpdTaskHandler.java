@@ -52,33 +52,35 @@ public class ReportStatusUpdTaskHandler extends AbstractTaskHandler{
         ReportStatusUpdRequest req = (ReportStatusUpdRequest)message.getPayload();
         String reportKey = req.getOrigialKey();
         String iptProcKey = req.getSubMessageKey();
-        ProcessResult reportResult = this.redisStore.read(reportKey, ProcessResult.class);//if no found?
-        ProcessResult iptProcResult = this.redisStore.read(iptProcKey, ProcessResult.class);//if no found?
-        
-        if(reportResult!=null && ReportStatus.CANCEL.compareTo(reportResult.getStatus())==0) {
-            log.info("the original message was cancelled: {}", reportResult.getMessage());
-            return;
+        synchronized(this.getClass()) {
+            ProcessResult reportResult = this.redisStore.read(reportKey, ProcessResult.class);//if no found?
+            ProcessResult iptProcResult = this.redisStore.read(iptProcKey, ProcessResult.class);//if no found?
+            
+            if(reportResult!=null && ReportStatus.CANCEL.compareTo(reportResult.getStatus())==0) {
+                log.info("the original message was cancelled: {}", reportResult.getMessage());
+                return;
+            }
+            if(CollectionUtils.isEmpty(reportResult.getSubMessageResults())) {
+                reportResult.setSubMessageResults(new ArrayList<>());
+            }
+            List<SubMessageResult> subMessageResults = reportResult.getSubMessageResults();
+            subMessageResults.add(SubMessageResult.builder().messageKey(iptProcKey).status(iptProcResult.getStatus()).build());
+            
+            //check all finish?
+            int totalMessages = reportResult.getTotalSubMessages();
+            long finishCount = subMessageResults.size();
+            if(finishCount<totalMessages) {
+                log.info("number finished out of total: {}/{} for message: {}", finishCount, totalMessages, reportResult.getMessage());
+            }
+            else {
+                log.info("all sub tasks({}) for this report request are completed: {}", totalMessages, reportResult.getMessage());
+                reportResult.setProcessEndTime(LocalDateTime.now());
+                reportResult.setStatus(ReportStatus.SUCCESS);
+                this.redisStore.write(keyManager.generateQueueKeyByReportKey(reportKey), null);
+            }
+            
+            this.redisStore.write(reportKey, reportResult);
         }
-        if(CollectionUtils.isEmpty(reportResult.getSubMessageResults())) {
-            reportResult.setSubMessageResults(new ArrayList<>());
-        }
-        List<SubMessageResult> subMessageResults = reportResult.getSubMessageResults();
-        subMessageResults.add(SubMessageResult.builder().messageKey(iptProcKey).status(iptProcResult.getStatus()).build());
-        
-        //check all finish?
-        int totalMessages = reportResult.getTotalSubMessages();
-        long finishCount = subMessageResults.size();
-        if(finishCount<totalMessages) {
-            log.info("number finished out of total: {}/{} for message: {}", finishCount, totalMessages, reportResult.getMessage());
-        }
-        else {
-            log.info("all sub tasks({}) for this report request are completed: {}", totalMessages, reportResult.getMessage());
-            reportResult.setProcessEndTime(LocalDateTime.now());
-            reportResult.setStatus(ReportStatus.SUCCESS);
-            this.redisStore.write(keyManager.generateQueueKeyByReportKey(reportKey), null);
-        }
-        
-        this.redisStore.write(reportKey, reportResult);
         
     }
 

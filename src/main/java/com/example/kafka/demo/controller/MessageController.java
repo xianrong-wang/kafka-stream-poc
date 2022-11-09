@@ -70,7 +70,7 @@ public class MessageController
         //message in queue
         final String messageInQueueKey = keyManager.generateQueueKey(rtpRequest.getTenant());
         ReportRequest inQueueRequest = redisClient.read(messageInQueueKey, ReportRequest.class);
-        if(inQueueRequest!=null) {
+        if(inQueueRequest!=null && !inQueueRequest.isCancelled()) {
             return "Rejected!";
         }
         producer.sendMessage(message);
@@ -89,8 +89,14 @@ public class MessageController
         log.info("create message for cancel report request: {}", key);
         //producer.sendMessage(buildMessage(rtpRequest));
         //listner.cancel(key);
-        cancelEventPublisher.publishCancelEvent(key);
-        redisClient.write(keyManager.generateQueueKeyByReportKey(key),null);
+        //cancelEventPublisher.publishCancelEvent(key);
+        
+        final String queueKey = keyManager.generateQueueKeyByReportKey(key);
+        ReportRequest req = redisClient.read(queueKey, ReportRequest.class);
+        if(req!=null) {
+            req.setCancelled(true);
+            redisClient.write(queueKey,req);
+        }
         return "Success!";
     }
     

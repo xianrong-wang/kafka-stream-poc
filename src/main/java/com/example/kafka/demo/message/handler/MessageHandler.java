@@ -12,7 +12,7 @@ import com.example.kafka.demo.redisks.RedisStore;
 import com.example.kafka.demo.service.Cancelable;
 import com.example.kafka.demo.service.Overwritable;
 
-public interface MessageHandler extends ApplicationListener<IaCancelEvent>,Cancelable, Overwritable
+public interface MessageHandler extends Cancelable
 {
     public void process(Message<?> msg, RedisStore<String,ProcessResult> redisStore) throws InterruptedException, ExecutionException;
 }

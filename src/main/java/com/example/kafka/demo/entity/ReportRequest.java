@@ -20,4 +20,5 @@ public class ReportRequest{
     private String requestUser;
     private LocalDateTime requestDatetime;
     private boolean overwrite;
+    private boolean cancelled;
 }

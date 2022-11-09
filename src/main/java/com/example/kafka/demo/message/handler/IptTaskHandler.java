@@ -54,6 +54,14 @@ public class IptTaskHandler extends AbstractTaskHandler{
     @Override
     public void run(Message<?> message) throws UnkownMessageException
     {
+        try
+        {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e)
+        {
+           throw new CancellationException("this task was cancelled");
+        }
+        
         if(!(message.getPayload() instanceof IptRequest)) {
             throw new UnkownMessageException(message);
         }
@@ -77,13 +85,7 @@ public class IptTaskHandler extends AbstractTaskHandler{
         //generate IptTransProcessMessage
         List<LedgePost> posts = elimServ.createElimLedgePost(ledgeServ
                 .getLedagePost(req.getTransactionId()));
-        try
-        {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e)
-        {
-           throw new CancellationException("this task was cancelled");
-        }
+       
        //sink into db
         log.info("persist elimination entries: {}", posts);
         result.setStatus(ReportStatus.SUCCESS);

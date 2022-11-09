@@ -25,7 +25,6 @@ public class MessageHandlerImpl implements MessageHandler{
     private final TaskHandlerProvider provider;
     private final MessageCancelListener listener;
     private ExecutorService executor;
-    private Message<?> msg;
     private boolean runAsync = true;
     @Autowired
     public MessageHandlerImpl(MessageCancelListener listener,TaskHandlerProvider provider) {
@@ -45,48 +44,16 @@ public class MessageHandlerImpl implements MessageHandler{
     @Override
     public void process(Message<?> msg,RedisStore<String,ProcessResult> redisStore) throws CancellationException, InterruptedException, ExecutionException
     {
-        this.msg = msg;
         listener.register(msg, this);
         if(runAsync ) {
             final Callable<Boolean> task = ()->provider.get(msg.getPayload().getClass(),redisStore).apply(msg);
-            executor.submit(task).get();
-            //submit task and wait for completion
+            executor.submit(task);//.get();
         }
         else {
             provider.get(msg.getPayload().getClass(),redisStore).apply(msg);
         }
-        listener.unregister(msg);
+        //listener.unregister(msg);
         
     }
 
-    @Override
-    public void cleanup()
-    {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void onApplicationEvent(IaCancelEvent event) {
-        /*
-        log.info("received cancel event for key: {}", event.getMessageKey());
-        if(this.msg!=null) {
-            log.info("current processing message key: {}",msg.getKey());
-            final String sourceKey = this.msg.getKey();
-            //cancel report request task
-            if(sourceKey.equals(event.getMessageKey()))
-                this.cancel();
-            //cancel ipt request task
-            String time = sourceKey.split(":")[3];
-            if(sourceKey.startsWith("IPT:" + time)) {
-                this.cancel();
-            }
-            //cancel status update task
-            if(sourceKey.startsWith("IPT:" + time) && sourceKey.endsWith("Status")) {
-                this.cancel();
-            }
-        }
-        */
-    }
-    
 }
