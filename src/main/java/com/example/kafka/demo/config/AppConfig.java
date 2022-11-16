@@ -13,8 +13,11 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.config.TopicBuilder;
 
+import com.example.kafka.demo.entity.Message;
+import com.example.kafka.demo.entity.ProcessResult;
 import com.example.kafka.demo.entity.ReportStatus;
 import com.example.kafka.demo.json.StatusDeserializer;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -32,10 +35,11 @@ public class AppConfig
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ReportStatus.class, new StatusDeserializer());
-//        TypeReference<ReportRequest> typeRef 
-//        = new TypeReference<ReportRequest>() {};
-//        module.addDeserializer(typeRef.getClass(), new MessageDeserializer<ReportRequest>());
+       // TypeReference<ProcessResult<Message<?>>> typeRef 
+       // = new TypeReference<ProcessResult<Message<?>>>() {};
+       // module.addDeserializer(typeRef.getClass(), new ProcessResultDeserializer<Message<?>>());
         objectMapper.registerModule(module);
+        
         
         JavaTimeModule javaTimeModule=new JavaTimeModule();
         // Hack time module to allow 'Z' at the end of string (i.e. javascript json's) 
@@ -62,6 +66,18 @@ public class AppConfig
     public NewTopic createReportStatusTopic(KafkaConfig config)
     {
         return TopicBuilder.name(config.getReportStatusUpdRequest().getTopic()).partitions(1).replicas(2).build();
+    }
+    
+    @Bean
+    public NewTopic createCancelTopic(KafkaConfig config)
+    {
+        return TopicBuilder.name(config.getCancelRequest().getTopic()).partitions(1).replicas(2).build();
+    }
+    
+    @Bean
+    public NewTopic createTestTopic(KafkaConfig config)
+    {
+        return TopicBuilder.name(config.getCancelRequest().getTopic()).partitions(2).replicas(2).build();
     }
     
     /*

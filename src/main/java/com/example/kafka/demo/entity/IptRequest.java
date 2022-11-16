@@ -22,6 +22,7 @@ public class IptRequest
 {
     private String key;//to remove
     private String transactionId;
+    private String tenant;
     private ReportStatus status;
     private String reportDate;//to remove
     private String origReqKey;

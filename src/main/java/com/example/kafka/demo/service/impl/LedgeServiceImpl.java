@@ -21,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 public class LedgeServiceImpl implements LedgeService
 {
 
+    private static final int totalNumber = 2000;
+
     @Override
     public List<LedgePost> getLedagePost(IptTransaction transaction)
     {
@@ -34,10 +36,10 @@ public class LedgeServiceImpl implements LedgeService
         log.info("getLedagePost for {}", transactionId);
         return
                 Stream.concat(
-        IntStream.range(1, 10).mapToObj(x->{
+        IntStream.range(1, totalNumber).mapToObj(x->{
             return LedgePost.builder().transactionId("ipt"+x).postType(LedgePostType.DEBIT).ledgeAccount("cost").amount(BigDecimal.valueOf(1000.0)).build();
         }),
-        IntStream.range(1, 10).mapToObj(x->{
+        IntStream.range(1, totalNumber).mapToObj(x->{
             return LedgePost.builder().transactionId("ipt"+x).postType(LedgePostType.CREDIT).ledgeAccount("gl").amount(BigDecimal.valueOf(1000.0)).build();
         }))
        /*return Arrays.asList(

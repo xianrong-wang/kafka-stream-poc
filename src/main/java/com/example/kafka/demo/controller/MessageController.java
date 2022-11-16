@@ -24,6 +24,7 @@ import com.example.kafka.demo.Producer;
 import com.example.kafka.demo.RedisClient;
 import com.example.kafka.demo.RedisClientImpl;
 import com.example.kafka.demo.config.KafkaConfig;
+import com.example.kafka.demo.entity.CancelRequest;
 import com.example.kafka.demo.entity.Message;
 import com.example.kafka.demo.entity.ProcessResult;
 import com.example.kafka.demo.entity.ReportReqResult;
@@ -34,6 +35,7 @@ import com.example.kafka.demo.message.handler.MessageCancelListener;
 import com.example.kafka.demo.redisks.ReadableRedisStore;
 import com.example.kafka.demo.redisks.RedisStoreType;
 import com.example.kafka.demo.service.KeyManager;
+import com.example.kafka.demo.service.StatusAggregator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
@@ -53,11 +55,23 @@ public class MessageController
     @Autowired
     private KeyManager keyManager;
     
-    @PostMapping("/messages/")
-    public String create(@RequestBody Message<ReportRequest> m)
+    @Autowired
+    private StatusAggregator statusAgg;
+    @Autowired
+    private KeyManager km;
+    
+    @GetMapping("/report/status/{key}")
+    public ProcessResult getReportStatus(@PathVariable String key)
     {
-        log.info("create task: {}", m);
-        producer.sendMessage(m);
+        log.info("getting status for report key: {}", key);
+        return statusAgg.getProcessResult(key);
+    }
+    
+    @PostMapping("/messages/")
+    public String create(@RequestBody String message)
+    {
+        log.info("sending message: {}", message);
+        producer.sendMessage(message);
         return "Success!";
     }
     
@@ -71,7 +85,10 @@ public class MessageController
         final String messageInQueueKey = keyManager.generateQueueKey(rtpRequest.getTenant());
         ReportRequest inQueueRequest = redisClient.read(messageInQueueKey, ReportRequest.class);
         if(inQueueRequest!=null && !inQueueRequest.isCancelled()) {
-            return "Rejected!";
+            //check whether it's completed
+            ProcessResult result = statusAgg.getProcessResult(km.generateReportKey(inQueueRequest));
+            if(result!=null && (result.getStatus()==ReportStatus.PENDING || result.getStatus()==ReportStatus.PROCESSING))
+                return "Rejected!";
         }
         producer.sendMessage(message);
         redisClient.write(messageInQueueKey, rtpRequest);
@@ -81,22 +98,29 @@ public class MessageController
     @PostMapping("/messages/cancel/{key}")
     public String cancelReportRequestMessage(@PathVariable String key)
     {
+        /*
         ProcessResult exResult = redisClient.read(key, ProcessResult.class);
         if(exResult!=null && ReportStatus.SUCCESS.compareTo(exResult.getStatus())!=0) {
             exResult.setStatus(ReportStatus.CANCEL);
             redisClient.write(key, exResult);
         }
-        log.info("create message for cancel report request: {}", key);
-        //producer.sendMessage(buildMessage(rtpRequest));
-        //listner.cancel(key);
-        //cancelEventPublisher.publishCancelEvent(key);
-        
         final String queueKey = keyManager.generateQueueKeyByReportKey(key);
         ReportRequest req = redisClient.read(queueKey, ReportRequest.class);
         if(req!=null) {
             req.setCancelled(true);
             redisClient.write(queueKey,req);
         }
+        */
+        log.info("create message for cancel report request: {}", key);
+        Message<CancelRequest> cancel = new Message<CancelRequest>();
+        cancel.setKey("Report:Cancel");
+        cancel.setPayload(new CancelRequest(key));
+        ProcessResult exResult = redisClient.read(key, ProcessResult.class);
+        if(exResult!=null && ReportStatus.SUCCESS.compareTo(exResult.getStatus())!=0) {
+            exResult.setStatus(ReportStatus.CANCEL);
+            redisClient.write(key, exResult);
+        }
+        producer.sendMessage(cancel);
         return "Success!";
     }
     

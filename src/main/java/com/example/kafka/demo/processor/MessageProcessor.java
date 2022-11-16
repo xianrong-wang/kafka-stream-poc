@@ -57,13 +57,13 @@ public class MessageProcessor implements Processor<String, Message<?>, Void, Voi
         } catch (CancellationException ex)
         {
             this.redisStore.write(record.key(),
-                    ProcessResult.builder().message(record.value()).status(ReportStatus.CANCEL).processEndTime(LocalDateTime.now()).build()
+                    ProcessResult.builder().message((Message<Object>) record.value()).status(ReportStatus.CANCEL).processEndTime(LocalDateTime.now()).build()
             );
         }
         catch(ExecutionException ex) {
             if(ex.getCause().getClass().equals(CancellationException.class)) {
                 this.redisStore.write(record.key(),
-                        ProcessResult.builder().message(record.value()).status(ReportStatus.CANCEL).processEndTime(LocalDateTime.now()).build()
+                        ProcessResult.builder().message((Message<Object>) record.value()).status(ReportStatus.CANCEL).processEndTime(LocalDateTime.now()).build()
                 ); 
             }
             else

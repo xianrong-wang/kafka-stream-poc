@@ -26,4 +26,17 @@ public class Producer
         );
         
     }
+
+    public void sendMessage(String message)
+    {
+        final String topic = "test";
+        Message<String> m = new Message<String>();
+        m.setKey(message);
+        m.setPayload(message);
+        kafkaTemplate.send(topic, m)
+        .addCallback(
+          result -> log.info("Message:{} was sent to topic: {}", m, topic),
+          ex -> log.error("Failed to send message", ex)
+        );
+    }
 }

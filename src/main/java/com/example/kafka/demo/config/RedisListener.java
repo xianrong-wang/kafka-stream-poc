@@ -16,7 +16,7 @@ import com.example.kafka.demo.service.KeyManager;
 import lombok.extern.slf4j.Slf4j;
 
 
-@Component
+//@Component
 @Slf4j
 public class RedisListener
 {

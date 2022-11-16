@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import com.example.kafka.demo.entity.CancelRequest;
 import com.example.kafka.demo.entity.IptRequest;
 import com.example.kafka.demo.entity.Message;
 import com.example.kafka.demo.entity.ProcessResult;
@@ -66,6 +67,7 @@ public class TaskHandlerProvider
             map.put(ReportRequest.class, ReportTaskHandler.class);
             map.put(IptRequest.class, IptTaskHandler.class);
             map.put(ReportStatusUpdRequest.class, ReportStatusUpdTaskHandler.class);
+            map.put(CancelRequest.class, CancelTaskHandler.class);
         }
      }
 }

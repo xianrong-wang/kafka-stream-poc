@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import com.example.kafka.demo.RedisClient;
 import com.example.kafka.demo.RedisClientImpl;
+import com.example.kafka.demo.entity.CancelRequest;
 import com.example.kafka.demo.entity.IptRequest;
 import com.example.kafka.demo.entity.Message;
 import com.example.kafka.demo.entity.ReportRequest;
@@ -26,8 +27,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j @Component
-public class KafkaStreamConfig
+@Slf4j 
+@Component
+public class StreamsPipeline
 {
     @Autowired
     private KafkaConfig config;
@@ -40,7 +42,7 @@ public class KafkaStreamConfig
     private ObjectMapper om;
 
     @Autowired
-    public void buildReportReqStream(StreamsBuilder streamsBuilder)
+    public void buildReportReqStream(StreamsBuilder generalKafkaStreamsBuilder)
     {
         final String stateStoreName = config.getReportRequest().getStateStore();
         RedisStoreBuilder<String, ReportRequest> customStoreBuilder = new RedisStoreBuilder<>(stateStoreName, false, redisClient);
@@ -51,7 +53,7 @@ public class KafkaStreamConfig
         deserializer.setUseTypeHeaders(false);
         deserializer.addTrustedPackages("*"); // have to set the trust package otherwise will run into exception
          */
-        streamsBuilder
+        generalKafkaStreamsBuilder
                 .addStateStore(customStoreBuilder)
                 .stream(config.getReportRequest().getTopic(), Consumed.with(Serdes.String(), Serdes.String()))//Serdes.serdeFrom(new JsonSerializer<Message<ReportRequest>>(), deserializer)))
                 .peek((k, v) -> log.info("key:{}, val:{}", k, v))
@@ -61,12 +63,12 @@ public class KafkaStreamConfig
     }
     
     @Autowired
-    public void buildIptReqStream(StreamsBuilder streamsBuilder)
+    public void buildIptReqStream(StreamsBuilder generalKafkaStreamsBuilder)
     {
         final String stateStoreName = config.getElimGenPerIptRequest().getStateStore();
         RedisStoreBuilder<String, IptRequest> customStoreBuilder = new RedisStoreBuilder<>(stateStoreName, false, redisClient);
 
-        streamsBuilder
+        generalKafkaStreamsBuilder
                 .addStateStore(customStoreBuilder)
                 .stream(config.getElimGenPerIptRequest().getTopic(), Consumed.with(Serdes.String(), Serdes.String()))//Serdes.serdeFrom(new JsonSerializer<Message<ReportRequest>>(), deserializer)))
                 .peek((k, v) -> log.info("key:{}, val:{}", k, v))
@@ -76,16 +78,31 @@ public class KafkaStreamConfig
     }
     
     @Autowired
-    public void buildStatusUpdReqStream(StreamsBuilder streamsBuilder)
+    public void buildStatusUpdReqStream(StreamsBuilder generalKafkaStreamsBuilder)
     {
         final String stateStoreName = config.getReportStatusUpdRequest().getStateStore();
         RedisStoreBuilder<String, ReportStatusUpdRequest> customStoreBuilder = new RedisStoreBuilder<>(stateStoreName, false, redisClient);
 
-        streamsBuilder
+        generalKafkaStreamsBuilder
                 .addStateStore(customStoreBuilder)
                 .stream(config.getReportStatusUpdRequest().getTopic(), Consumed.with(Serdes.String(), Serdes.String()))//Serdes.serdeFrom(new JsonSerializer<Message<ReportRequest>>(), deserializer)))
                 .peek((k, v) -> log.info("key:{}, val:{}", k, v))
                 .map(getMapper(ReportStatusUpdRequest.class))   
+                .process( ()->new MessageProcessor(handlerProvider,stateStoreName), stateStoreName);
+        ;
+    }
+    
+    @Autowired
+    public void buildCancelReqStream(StreamsBuilder cancelKafkaStreamsBuilder)
+    {
+        final String stateStoreName = config.getReportStatusUpdRequest().getStateStore();
+        RedisStoreBuilder<String, ReportStatusUpdRequest> customStoreBuilder = new RedisStoreBuilder<>(stateStoreName, false, redisClient);
+
+        cancelKafkaStreamsBuilder
+                .addStateStore(customStoreBuilder)
+                .stream(config.getCancelRequest().getTopic(), Consumed.with(Serdes.String(), Serdes.String()))//Serdes.serdeFrom(new JsonSerializer<Message<ReportRequest>>(), deserializer)))
+                .peek((k, v) -> log.info("key:{}, val:{}", k, v))
+                .map(getMapper(CancelRequest.class))   
                 .process( ()->new MessageProcessor(handlerProvider,stateStoreName), stateStoreName);
         ;
     }
